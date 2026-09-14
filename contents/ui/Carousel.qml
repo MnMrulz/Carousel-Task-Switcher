@@ -1,4 +1,5 @@
 import QtQuick
+import org.kde.kirigami as Kirigami
 
 Item {
     id: carousel
@@ -60,35 +61,79 @@ Item {
     // Center focus area
     // ─────────────────────────────────────────────
 
-    Rectangle {
-        id: centerFocus
+Rectangle {
+    id: centerFocus
 
-        width: 118
-        height: 118
+    width: 118
+    height: 118
 
-        radius: width / 2
+    radius: width / 2
+
+    anchors.centerIn: parent
+
+    color: Qt.rgba(0.12, 0.13, 0.15, 0.18)
+
+    border.width: 1
+    border.color: Qt.rgba(1, 1, 1, 0.20)
+
+    // ─────────────────────────────────────────
+    // Selected application icon
+    // ─────────────────────────────────────────
+
+    Kirigami.Icon {
+        id: centerIcon
 
         anchors.centerIn: parent
 
-        color: Qt.rgba(0.12, 0.13, 0.15, 0.18)
+        width: 64
+        height: 64
 
-        border.width: 1
-        border.color: Qt.rgba(1, 1, 1, 0.20)
+        source: {
+            if (!windowRepeater.itemAt(carousel.currentIndex))
+            return ""
 
-        Behavior on width {
-            NumberAnimation {
-                duration: 280
-                easing.type: Easing.OutCubic
-            }
+            return windowRepeater.itemAt(carousel.currentIndex).appIcon
         }
+        isMask: false
 
-        Behavior on height {
+        scale: 1.0
+
+        Behavior on scale {
             NumberAnimation {
-                duration: 280
+                duration: 180
                 easing.type: Easing.OutCubic
             }
         }
     }
+
+    // Small highlight behind the icon
+    Rectangle {
+        anchors.centerIn: centerIcon
+
+        width: centerIcon.width + 18
+        height: centerIcon.height + 18
+
+        radius: width / 2
+
+        color: Qt.rgba(1, 1, 1, 0.055)
+
+        z: -1
+    }
+
+    Behavior on width {
+        NumberAnimation {
+            duration: 280
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    Behavior on height {
+        NumberAnimation {
+            duration: 280
+            easing.type: Easing.OutCubic
+        }
+    }
+}
 
     // ─────────────────────────────────────────────
     // Window carousel
@@ -103,6 +148,7 @@ Item {
             id: delegateRoot
 
             property int itemIndex: index
+            property var appIcon: model.icon
 
             // Circular distance from selected item.
             //
