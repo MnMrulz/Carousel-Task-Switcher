@@ -1,14 +1,13 @@
 import QtQuick
-
 import org.kde.kwin as KWin
 
-KWin.TabBoxSwitcher {
-    id: tabBox
+KWin.Switcher {
+    id: switcher
 
     Window {
         id: switcherWindow
 
-        visible: tabBox.visible
+        visible: switcher.visible
 
         flags: Qt.BypassWindowManagerHint |
                Qt.FramelessWindowHint
@@ -21,44 +20,33 @@ KWin.TabBoxSwitcher {
         Carousel {
             id: carousel
 
-            model: tabBox.model
-
-            currentIndex: tabBox.currentIndex
-
             anchors.centerIn: parent
+
+            model: switcher.model
+            currentIndex: switcher.currentIndex
+
+            onCurrentIndexChanged: {
+                if (switcher.currentIndex !== currentIndex)
+                    switcher.currentIndex = currentIndex
+            }
         }
 
-        /*
-         * Keep the switcher centered on the active screen.
-         */
         onVisibleChanged: {
             if (!visible)
                 return
 
-            var screen =
-                KWin.Workspace.clientArea(
-                    KWin.Workspace.ScreenArea,
-                    KWin.Workspace.activeScreen,
-                    KWin.Workspace.currentDesktop
-                )
+            x = switcher.screenGeometry.x +
+                (switcher.screenGeometry.width - width) / 2
 
-            switcherWindow.x =
-                screen.x +
-                (screen.width - switcherWindow.width) / 2
-
-            switcherWindow.y =
-                screen.y +
-                (screen.height - switcherWindow.height) / 2
+            y = switcher.screenGeometry.y +
+                (switcher.screenGeometry.height - height) / 2
 
             carousel.refresh()
         }
     }
 
-    /*
-     * KWin changes this whenever Alt+Tab changes
-     * the selected window.
-     */
     onCurrentIndexChanged: {
-        carousel.currentIndex = currentIndex
+        if (carousel.currentIndex !== currentIndex)
+            carousel.currentIndex = currentIndex
     }
 }
