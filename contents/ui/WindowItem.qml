@@ -1,4 +1,158 @@
 import QtQuick
+import org.kde.kwin 2.0 as KWin
+import org.kde.kirigami as Kirigami
+
+Item {
+    id: root
+
+    property var windowId
+    property string iconName: ""
+    property string caption: ""
+    property bool selected: false
+
+    signal clicked()
+
+    // ─────────────────────────────────────────────
+    // Card
+    // ─────────────────────────────────────────────
+
+    Rectangle {
+        id: card
+
+        anchors.fill: parent
+
+        radius: selected ? 18 : 14
+
+        color: Qt.rgba(
+            0.06,
+            0.07,
+            0.08,
+            selected ? 0.48 : 0.34
+        )
+
+        border.width: selected ? 2 : 1
+
+        border.color:
+            selected
+                ? Qt.rgba(1, 1, 1, 0.72)
+                : Qt.rgba(1, 1, 1, 0.27)
+
+        clip: true
+
+        // ─────────────────────────────────────────
+        // Live thumbnail
+        // ─────────────────────────────────────────
+
+        KWin.WindowThumbnail {
+            id: thumbnail
+
+            anchors.fill: parent
+
+            anchors.margins: selected ? 3 : 2
+
+            wId: root.windowId
+        }
+
+        // ─────────────────────────────────────────
+        // Glass tint
+        // ─────────────────────────────────────────
+
+        Rectangle {
+            anchors.fill: parent
+
+            radius: card.radius
+
+            color: Qt.rgba(
+                1,
+                1,
+                1,
+                selected ? 0.08 : 0.035
+            )
+        }
+
+        // ─────────────────────────────────────────
+        // App icon
+        // ─────────────────────────────────────────
+
+        Rectangle {
+            id: iconBackground
+
+            width: selected ? 46 : 36
+            height: width
+
+            radius: width / 2
+
+            anchors.left: parent.left
+            anchors.top: parent.top
+
+            anchors.leftMargin: selected ? 9 : 7
+            anchors.topMargin: selected ? 9 : 7
+
+            color: Qt.rgba(0.04, 0.05, 0.06, 0.58)
+
+            border.width: 1
+            border.color: Qt.rgba(1, 1, 1, 0.28)
+
+            Kirigami.Icon {
+                anchors.centerIn: parent
+
+                width: parent.width * 0.65
+                height: width
+
+                source: root.iconName
+
+                isMask: false
+            }
+
+            Behavior on width {
+                NumberAnimation {
+                    duration: 220
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Behavior on height {
+                NumberAnimation {
+                    duration: 220
+                    easing.type: Easing.OutCubic
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────
+        // Selected outline
+        // ─────────────────────────────────────────
+
+        Rectangle {
+            visible: root.selected
+
+            anchors.fill: parent
+
+            radius: card.radius
+
+            color: "transparent"
+
+            border.width: 1
+            border.color: Qt.rgba(1, 1, 1, 0.30)
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // Mouse interaction
+    // ─────────────────────────────────────────────
+
+    MouseArea {
+        anchors.fill: parent
+
+        hoverEnabled: true
+
+        cursorShape: Qt.PointingHandCursor
+
+        onClicked: {
+            root.clicked()
+        }
+    }
+}import QtQuick
 import org.kde.kwin as KWin
 import org.kde.kirigami as Kirigami
 
