@@ -1,0 +1,11 @@
+{
+    "KPlugin": {
+        "Name": "Carousel Task Switcher",
+        "Description": "A glass carousel-style KWin window switcher",
+        "Icon": "preferences-system-windows",
+        "Id": "carousel-task-switcher",
+        "Version": "1.0.0",
+        "License": "GPL-3.0-or-later"
+    },
+    "KPackageStructure": "KWin/TabBox"
+}
