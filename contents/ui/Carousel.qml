@@ -4,31 +4,23 @@ import org.kde.kirigami as Kirigami
 Item {
     id: carousel
 
-    // ─────────────────────────────────────────────
-    // Public API
-    // ─────────────────────────────────────────────
-
     property var model
     property int currentIndex: 0
 
-    // Overall size — intentionally ~7% smaller than the
-    // original reference design.
     readonly property real diameter: 410
-
-    // Radius on which the windows travel.
     readonly property real radius: 145
 
-    // How many degrees separate each window.
+    readonly property int itemCount:
+        model ? model.count : 0
+
     readonly property real angleStep:
-        model && model.count > 0
-        ? 360 / model.count
-        : 360
+        itemCount > 1 ? 360 / itemCount : 360
 
     width: diameter
     height: diameter
 
     // ─────────────────────────────────────────────
-    // Main glass surface
+    // Glass body
     // ─────────────────────────────────────────────
 
     Rectangle {
@@ -43,7 +35,6 @@ Item {
         border.width: 1
         border.color: Qt.rgba(1, 1, 1, 0.38)
 
-        // Very subtle inner highlight
         Rectangle {
             anchors.fill: parent
             anchors.margins: 1
@@ -58,85 +49,65 @@ Item {
     }
 
     // ─────────────────────────────────────────────
-    // Center focus area
+    // Center
     // ─────────────────────────────────────────────
 
-Rectangle {
-    id: centerFocus
-
-    width: 118
-    height: 118
-
-    radius: width / 2
-
-    anchors.centerIn: parent
-
-    color: Qt.rgba(0.12, 0.13, 0.15, 0.18)
-
-    border.width: 1
-    border.color: Qt.rgba(1, 1, 1, 0.20)
-
-    // ─────────────────────────────────────────
-    // Selected application icon
-    // ─────────────────────────────────────────
-
-    Kirigami.Icon {
-        id: centerIcon
-
-        anchors.centerIn: parent
-
-        width: 64
-        height: 64
-
-        source: {
-            if (!windowRepeater.itemAt(carousel.currentIndex))
-            return ""
-
-            return windowRepeater.itemAt(carousel.currentIndex).appIcon
-        }
-        isMask: false
-
-        scale: 1.0
-
-        Behavior on scale {
-            NumberAnimation {
-                duration: 180
-                easing.type: Easing.OutCubic
-            }
-        }
-    }
-
-    // Small highlight behind the icon
     Rectangle {
-        anchors.centerIn: centerIcon
+        id: centerFocus
 
-        width: centerIcon.width + 18
-        height: centerIcon.height + 18
+        width: 118
+        height: 118
 
         radius: width / 2
 
-        color: Qt.rgba(1, 1, 1, 0.055)
+        anchors.centerIn: parent
 
-        z: -1
-    }
+        color: Qt.rgba(0.12, 0.13, 0.15, 0.18)
 
-    Behavior on width {
-        NumberAnimation {
-            duration: 280
-            easing.type: Easing.OutCubic
+        border.width: 1
+        border.color: Qt.rgba(1, 1, 1, 0.20)
+
+        Kirigami.Icon {
+            id: centerIcon
+
+            anchors.centerIn: parent
+
+            width: 64
+            height: 64
+
+            source: {
+                var item = windowRepeater.itemAt(carousel.currentIndex)
+
+                if (!item)
+                    return ""
+
+                return item.appIcon
+            }
+
+            isMask: false
+
+            Behavior on source {
+                // Gives the icon swap a little breathing room.
+                // The icon itself is still immediately updated.
+            }
+        }
+
+        Rectangle {
+            anchors.centerIn: centerIcon
+
+            width: centerIcon.width + 18
+            height: centerIcon.height + 18
+
+            radius: width / 2
+
+            color: Qt.rgba(1, 1, 1, 0.055)
+
+            z: -1
         }
     }
-
-    Behavior on height {
-        NumberAnimation {
-            duration: 280
-            easing.type: Easing.OutCubic
-        }
-    }
-}
 
     // ─────────────────────────────────────────────
-    // Window carousel
+    // Carousel items
     // ─────────────────────────────────────────────
 
     Repeater {
@@ -150,19 +121,19 @@ Rectangle {
             property int itemIndex: index
             property var appIcon: model.icon
 
-            // Circular distance from selected item.
-            //
-            // Example:
-            // current = 0
-            // item = last item
-            // relativeIndex = -1
-            //
-            // This makes the carousel wrap naturally.
+            property bool selected:
+                itemIndex === carousel.currentIndex
+
+            /*
+             * Calculate the shortest circular distance
+             * between this item and the selected item.
+             */
             property int relativeIndex: {
-                if (!carousel.model || carousel.model.count <= 0)
+                var count = carousel.itemCount
+
+                if (count <= 1)
                     return 0
 
-                var count = carousel.model.count
                 var delta = itemIndex - carousel.currentIndex
 
                 while (delta > count / 2)
@@ -174,50 +145,56 @@ Rectangle {
                 return delta
             }
 
+            /*
+             * The selected item is exactly at 12 o'clock.
+             *
+             * Every other item is positioned around it.
+             */
             property real angle:
                 -90 + relativeIndex * carousel.angleStep
 
             property real radians:
                 angle * Math.PI / 180
 
-            property real distanceFromFocus:
+            property real distance:
                 Math.abs(relativeIndex)
 
-            property bool selected:
-                itemIndex === carousel.currentIndex
-
-            // Selected item becomes substantially larger.
-            property real itemScale:
+            property real targetScale:
                 selected
-                ? 1.38
-                : Math.max(
-                    0.62,
-                    1.0 - distanceFromFocus * 0.09
-                  )
+                    ? 1.0
+                    : Math.max(
+                        0.58,
+                        0.90 - distance * 0.08
+                    )
+
+            property real targetOpacity:
+                selected
+                    ? 1.0
+                    : Math.max(
+                        0.35,
+                        0.90 - distance * 0.12
+                    )
 
             width: selected ? 180 : 125
             height: selected ? 125 : 88
 
-            x: carousel.width / 2
-               + Math.cos(radians) * carousel.radius
-               - width / 2
+            x:
+                carousel.width / 2 +
+                Math.cos(radians) * carousel.radius -
+                width / 2
 
-            y: carousel.height / 2
-               + Math.sin(radians) * carousel.radius
-               - height / 2
+            y:
+                carousel.height / 2 +
+                Math.sin(radians) * carousel.radius -
+                height / 2
 
-            z: selected
-               ? 100
-               : 50 - distanceFromFocus
+            scale: targetScale
+            opacity: targetOpacity
 
-            scale: itemScale
-
-            opacity: selected
-                      ? 1.0
-                      : Math.max(
-                          0.42,
-                          0.92 - distanceFromFocus * 0.10
-                        )
+            z:
+                selected
+                    ? 100
+                    : 50 - distance
 
             Behavior on x {
                 NumberAnimation {
@@ -242,7 +219,7 @@ Rectangle {
 
             Behavior on opacity {
                 NumberAnimation {
-                    duration: 220
+                    duration: 240
                     easing.type: Easing.OutCubic
                 }
             }
@@ -263,12 +240,10 @@ Rectangle {
     }
 
     // ─────────────────────────────────────────────
-    // Keep carousel visually centered
+    // Refresh
     // ─────────────────────────────────────────────
 
     function refresh() {
-        // Force bindings to re-evaluate after the KWin
-        // model is recreated.
         windowRepeater.model = null
         windowRepeater.model = carousel.model
     }
